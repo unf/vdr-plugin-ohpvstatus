@@ -26,7 +26,7 @@ VDR Plugin 'ohpvstatus' Revision History
 2026-04: Version 0.3.0
 
 - First version, written by Claude Sonnet (Anthropic) on behalf of Frank
-  Neumann as a test of what is possible.
+  Neumann as an experiment in AI-assisted software prototyping.
 - Shows PV production, house consumption, battery charge/discharge, battery
   state of charge with a bar and grid import/export from openHAB.
 - Host, port, SSL and items on the command line, update interval, unit and

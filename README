@@ -1,10 +1,11 @@
 This is a "plugin" for the Video Disk Recorder (VDR).
 
 Written by:     Frank Neumann <fnu@vdr-portal.de>
-                with Claude (Anthropic): version 0.3.0 was written by Claude
-                Sonnet in April 2026 on Frank's behalf as a test of what is
-                possible, version 0.4.0 was reviewed and reworked by Claude
-                Opus. Credit where credit is due.
+                together with Claude (Anthropic). Version 0.3.0 and earlier
+                were written by Claude Sonnet in April 2026 on Frank's behalf
+                as an experiment in AI-assisted software prototyping.
+                Version 0.4.0 was reviewed and reworked by Claude Opus.
+                Credit where credit is due.
 Project's homepage: https://github.com/unf/vdr-plugin-ohpvstatus
 Support:        https://www.vdr-portal.de
 
