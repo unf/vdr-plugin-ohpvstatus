@@ -1,0 +1,102 @@
+# German translation for vdr-ohpvstatus
+# Copyright (C) 2025
+msgid ""
+msgstr ""
+"Project-Id-Version: vdr-ohpvstatus 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-05 15:37+0200\n"
+"PO-Revision-Date: 2025-05-05 12:00+0200\n"
+"Last-Translator: \n"
+"Language-Team: German\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "openHAB PV Status"
+msgstr ""
+
+msgid "Refresh"
+msgstr "Aktualisieren"
+
+msgid "Setup"
+msgstr "Einstellungen"
+
+msgid "--- openHAB not reachable ---"
+msgstr "--- openHAB nicht erreichbar ---"
+
+#, c-format
+msgid "Host: %s:%d"
+msgstr "Host: %s:%d"
+
+#, c-format
+msgid "Battery SoC:"
+msgstr "Batterie SoC:"
+
+#, c-format
+msgid "PV Production:"
+msgstr "PV Erzeugung:"
+
+#, c-format
+msgid "House Consumption:"
+msgstr "Hausverbrauch:"
+
+msgid "Battery Charging:"
+msgstr "Batterie laedt:"
+
+msgid "Battery Discharging:"
+msgstr "Batterie entlaedt:"
+
+msgid "Grid Import:"
+msgstr "Netzbezug:"
+
+msgid "Grid Export:"
+msgstr "Netzeinspeisung:"
+
+msgid "Updated: %H:%M:%S"
+msgstr "Aktualisiert: %H:%M:%S"
+
+msgid "Update interval (s)"
+msgstr "Aktualisierungsintervall (s)"
+
+msgid "Unit display"
+msgstr "Einheitendarstellung"
+
+msgid "Invert PV"
+msgstr "PV invertieren"
+
+msgid "Invert Grid"
+msgstr "Netz invertieren"
+
+msgid "Invert Battery"
+msgstr "Batterie invertieren"
+
+msgid "Invert House"
+msgstr "Haus invertieren"
+
+#~ msgid "PV Status"
+#~ msgstr "PV Status"
+
+#~ msgid "openHAB Host"
+#~ msgstr "openHAB Host"
+
+#~ msgid "openHAB Port"
+#~ msgstr "openHAB Port"
+
+#~ msgid "Item PV Power"
+#~ msgstr "Item PV Leistung"
+
+#~ msgid "Item Grid Power"
+#~ msgstr "Item Netzleistung"
+
+#~ msgid "Item Battery Power"
+#~ msgstr "Item Batterieleistung"
+
+#~ msgid "Item House Power"
+#~ msgstr "Item Hausverbrauch"
+
+#~ msgid "Item Battery SoC"
+#~ msgstr "Item Batterie Ladezustand"
+
+#~ msgid "openHAB PV & Energy Status"
+#~ msgstr "openHAB PV & Energie Status"
