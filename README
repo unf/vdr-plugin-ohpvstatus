@@ -127,6 +127,22 @@ openHAB did not answer at all (wrong host or port, firewall, openHAB not
 running), see the VDR log for the curl error.
 
 
+Debian packages
+---------------
+
+Ready-made packages for Debian 13 (trixie) and VDR 2.8.3 are in the
+vdr-portal.de APT repository (vdr-plugin-ohpvstatus).
+
+The Debian packaging is kept in the branch debian/trixie of this
+repository, on top of the release tag. To build the package yourself:
+
+  git clone https://github.com/unf/vdr-plugin-ohpvstatus.git
+  cd vdr-plugin-ohpvstatus
+  git checkout debian/trixie
+  gbp buildpackage
+
+This needs git-buildpackage and vdr-dev of the VDR the plugin is built for.
+
 Files
 -----
 
