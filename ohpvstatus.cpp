@@ -1,115 +1,148 @@
+/*
+ * ohpvstatus.cpp: a plugin for the Video Disk Recorder
+ *
+ * Shows PV production, house consumption, battery and grid power and the
+ * battery state of charge from an openHAB installation in the VDR OSD.
+ *
+ * See the README file for copyright information and how to reach the author.
+ */
+
 #include "ohpvstatus.h"
 #include "menu.h"
 #include <vdr/plugin.h>
+#include <curl/curl.h>
 #include <getopt.h>
-#include <cstring>
 #include <cstdlib>
+#include <cstring>
 
-static const char *VERSION        = "0.3.0";
-static const char *DESCRIPTION    = "openHAB PV & Energy Status";
-static const char *MAINMENUENTRY  = "openHAB PV Status";
+static const char *VERSION        = "0.4.0";
+static const char *DESCRIPTION    = trNOOP("openHAB PV & Energy Status");
+static const char *MAINMENUENTRY  = trNOOP("openHAB PV Status");
 
 cOhPvStatusConfig OhPvStatusConfig;
 
 class cPluginOhPvStatus : public cPlugin {
 public:
-    cPluginOhPvStatus() {}
+    cPluginOhPvStatus(void) {}
     virtual ~cPluginOhPvStatus() {}
 
-    virtual const char *Version()       { return VERSION; }
-    virtual const char *Description()   { return tr(DESCRIPTION); }
-    virtual const char *MainMenuEntry() { return tr(MAINMENUENTRY); }
+    virtual const char *Version(void)       { return VERSION; }
+    virtual const char *Description(void)   { return tr(DESCRIPTION); }
+    virtual const char *MainMenuEntry(void) { return tr(MAINMENUENTRY); }
 
-    virtual const char *CommandLineHelp()
+    virtual const char *CommandLineHelp(void)
     {
         return
             "  -H HOST,        --host=HOST          openHAB hostname or IP (default: 127.0.0.1)\n"
             "  -P PORT,        --port=PORT          openHAB port (default: 8080)\n"
-            "                  --ssl                Use HTTPS instead of HTTP\n"
-            "                  --ssl-verify=no      Disable SSL certificate verification\n"
-            "                  --pv=ITEM            Item for PV power (default: PVPower)\n"
-            "                  --house=ITEM         Item for house power (default: HousePower)\n"
-            "                  --soc=ITEM           Item for battery SoC (default: BatterySoC)\n"
+            "                  --ssl                use HTTPS instead of HTTP\n"
+            "                  --ssl-verify=no      do not verify the SSL certificate\n"
+            "                  --token=TOKEN        openHAB API token, if openHAB requires one\n"
+            "                  --pv=ITEM            item for PV power (default: PVPower)\n"
+            "                  --house=ITEM         item for house power (default: HousePower)\n"
+            "                  --soc=ITEM           item for battery SoC in % (default: BatterySoC,\n"
+            "                                       --soc= without item hides the SoC line)\n"
             "  Grid (choose one):\n"
-            "                  --grid=ITEM          Single item, positive=import negative=export\n"
-            "                  --grid-in=ITEM       Grid import (always positive)\n"
-            "                  --grid-out=ITEM      Grid export (always positive)\n"
+            "                  --grid=ITEM          single item, positive = import, negative = export\n"
+            "                                       (default: GridPower)\n"
+            "                  --grid-in=ITEM       grid import (always positive)\n"
+            "                  --grid-out=ITEM      grid export (always positive)\n"
             "  Battery (choose one):\n"
-            "                  --battery=ITEM       Single item, positive=charge negative=discharge\n"
-            "                  --bat-in=ITEM        Battery charging (always positive)\n"
-            "                  --bat-out=ITEM       Battery discharging (always positive)\n";
+            "                  --battery=ITEM       single item, positive = charging, negative = discharging\n"
+            "                                       (default: BatteryPower)\n"
+            "                  --bat-in=ITEM        battery charging (always positive)\n"
+            "                  --bat-out=ITEM       battery discharging (always positive)\n";
     }
 
     virtual bool ProcessArgs(int argc, char *argv[])
     {
         enum {
-            OPT_PV = 1, OPT_HOUSE, OPT_SOC,
+            OPT_PV = 256, OPT_HOUSE, OPT_SOC,
             OPT_GRID, OPT_GRID_IN, OPT_GRID_OUT,
             OPT_BAT, OPT_BAT_IN, OPT_BAT_OUT,
-            OPT_SSL, OPT_SSL_VERIFY
+            OPT_SSL, OPT_SSL_VERIFY, OPT_TOKEN
         };
-
         static struct option long_options[] = {
-            { "host",       required_argument, NULL, 'H'           },
-            { "port",       required_argument, NULL, 'P'           },
-            { "ssl",        no_argument,       NULL, OPT_SSL       },
-            { "ssl-verify", required_argument, NULL, OPT_SSL_VERIFY},
-            { "pv",         required_argument, NULL, OPT_PV        },
-            { "house",      required_argument, NULL, OPT_HOUSE     },
-            { "soc",        required_argument, NULL, OPT_SOC       },
-            { "grid",       required_argument, NULL, OPT_GRID      },
-            { "grid-in",    required_argument, NULL, OPT_GRID_IN   },
-            { "grid-out",   required_argument, NULL, OPT_GRID_OUT  },
-            { "battery",    required_argument, NULL, OPT_BAT       },
-            { "bat-in",     required_argument, NULL, OPT_BAT_IN    },
-            { "bat-out",    required_argument, NULL, OPT_BAT_OUT   },
+            { "host",       required_argument, NULL, 'H'            },
+            { "port",       required_argument, NULL, 'P'            },
+            { "ssl",        no_argument,       NULL, OPT_SSL        },
+            { "ssl-verify", required_argument, NULL, OPT_SSL_VERIFY },
+            { "token",      required_argument, NULL, OPT_TOKEN      },
+            { "pv",         required_argument, NULL, OPT_PV         },
+            { "house",      required_argument, NULL, OPT_HOUSE      },
+            { "soc",        required_argument, NULL, OPT_SOC        },
+            { "grid",       required_argument, NULL, OPT_GRID       },
+            { "grid-in",    required_argument, NULL, OPT_GRID_IN    },
+            { "grid-out",   required_argument, NULL, OPT_GRID_OUT   },
+            { "battery",    required_argument, NULL, OPT_BAT        },
+            { "bat-in",     required_argument, NULL, OPT_BAT_IN     },
+            { "bat-out",    required_argument, NULL, OPT_BAT_OUT    },
             { NULL, 0, NULL, 0 }
         };
 
-        int c, option_index = 0;
-        while ((c = getopt_long(argc, argv, "H:P:", long_options, &option_index)) != -1) {
-            switch (c) {
-                case 'H': strncpy(OhPvStatusConfig.openhabHost,  optarg, sizeof(OhPvStatusConfig.openhabHost));  break;
-                case 'P': OhPvStatusConfig.openhabPort = atoi(optarg); break;
-                case OPT_SSL:        OhPvStatusConfig.useSSL    = true;  break;
-                case OPT_SSL_VERIFY: OhPvStatusConfig.sslVerify = (strcasecmp(optarg, "no") != 0); break;
-                case OPT_PV:         strncpy(OhPvStatusConfig.itemPV,      optarg, sizeof(OhPvStatusConfig.itemPV));      break;
-                case OPT_HOUSE:      strncpy(OhPvStatusConfig.itemHouse,   optarg, sizeof(OhPvStatusConfig.itemHouse));   break;
-                case OPT_SOC:        strncpy(OhPvStatusConfig.itemSoC,     optarg, sizeof(OhPvStatusConfig.itemSoC));     break;
-                case OPT_GRID:       strncpy(OhPvStatusConfig.itemGrid,    optarg, sizeof(OhPvStatusConfig.itemGrid));    break;
-                case OPT_GRID_IN:    strncpy(OhPvStatusConfig.itemGridIn,  optarg, sizeof(OhPvStatusConfig.itemGridIn));  break;
-                case OPT_GRID_OUT:   strncpy(OhPvStatusConfig.itemGridOut, optarg, sizeof(OhPvStatusConfig.itemGridOut)); break;
-                case OPT_BAT:        strncpy(OhPvStatusConfig.itemBattery, optarg, sizeof(OhPvStatusConfig.itemBattery)); break;
-                case OPT_BAT_IN:     strncpy(OhPvStatusConfig.itemBatIn,   optarg, sizeof(OhPvStatusConfig.itemBatIn));   break;
-                case OPT_BAT_OUT:    strncpy(OhPvStatusConfig.itemBatOut,  optarg, sizeof(OhPvStatusConfig.itemBatOut));  break;
-                default: break;
+        cOhPvStatusConfig &c = OhPvStatusConfig;
+        int opt;
+        while ((opt = getopt_long(argc, argv, "H:P:", long_options, NULL)) != -1) {
+            switch (opt) {
+                case 'H':            strn0cpy(c.openhabHost, optarg, sizeof(c.openhabHost)); break;
+                case 'P':            c.openhabPort = atoi(optarg); break;
+                case OPT_SSL:        c.useSSL    = true; break;
+                case OPT_SSL_VERIFY: c.sslVerify = strcasecmp(optarg, "no") != 0; break;
+                case OPT_TOKEN:      strn0cpy(c.apiToken,    optarg, sizeof(c.apiToken));    break;
+                case OPT_PV:         strn0cpy(c.itemPV,      optarg, sizeof(c.itemPV));      break;
+                case OPT_HOUSE:      strn0cpy(c.itemHouse,   optarg, sizeof(c.itemHouse));   break;
+                case OPT_SOC:        strn0cpy(c.itemSoC,     optarg, sizeof(c.itemSoC));     break;
+                case OPT_GRID:       strn0cpy(c.itemGrid,    optarg, sizeof(c.itemGrid));    break;
+                case OPT_GRID_IN:    strn0cpy(c.itemGridIn,  optarg, sizeof(c.itemGridIn));  break;
+                case OPT_GRID_OUT:   strn0cpy(c.itemGridOut, optarg, sizeof(c.itemGridOut)); break;
+                case OPT_BAT:        strn0cpy(c.itemBattery, optarg, sizeof(c.itemBattery)); break;
+                case OPT_BAT_IN:     strn0cpy(c.itemBatIn,   optarg, sizeof(c.itemBatIn));   break;
+                case OPT_BAT_OUT:    strn0cpy(c.itemBatOut,  optarg, sizeof(c.itemBatOut));  break;
+                default:             return false;
             }
         }
+        if (c.openhabPort <= 0 || c.openhabPort > 65535) {
+            esyslog("ohpvstatus: invalid port %d", c.openhabPort);
+            return false;
+        }
+        if ((c.itemGridIn[0] != '\0') != (c.itemGridOut[0] != '\0'))
+            esyslog("ohpvstatus: --grid-in and --grid-out must be used together, using --grid");
+        if ((c.itemBatIn[0] != '\0') != (c.itemBatOut[0] != '\0'))
+            esyslog("ohpvstatus: --bat-in and --bat-out must be used together, using --battery");
         return true;
     }
 
-    virtual bool Start() { return true; }
-    virtual void Stop()  {}
-
-    virtual cOsdObject *MainMenuAction()
+    virtual bool Initialize(void)
     {
-        return new cMenuOhPvStatus();
+        return curl_global_init(CURL_GLOBAL_DEFAULT) == CURLE_OK;
     }
 
-    virtual cMenuSetupPage *SetupMenu()
+    virtual void Stop(void)
     {
-        return new cMenuOhPvStatusSetup();
+        curl_global_cleanup();
+    }
+
+    virtual cOsdObject *MainMenuAction(void)
+    {
+        return new cMenuOhPvStatus;
+    }
+
+    virtual cMenuSetupPage *SetupMenu(void)
+    {
+        return new cMenuOhPvStatusSetup;
     }
 
     virtual bool SetupParse(const char *Name, const char *Value)
     {
-        if      (!strcmp(Name, "Interval"))    OhPvStatusConfig.updateInterval = atoi(Value);
-        else if (!strcmp(Name, "UnitMode"))    OhPvStatusConfig.unitMode       = atoi(Value);
-        else if (!strcmp(Name, "InvertPV"))    OhPvStatusConfig.invertPV       = atoi(Value);
-        else if (!strcmp(Name, "InvertGrid"))  OhPvStatusConfig.invertGrid     = atoi(Value);
-        else if (!strcmp(Name, "InvertBat"))   OhPvStatusConfig.invertBattery  = atoi(Value);
-        else if (!strcmp(Name, "InvertHouse")) OhPvStatusConfig.invertHouse    = atoi(Value);
-        else return false;
+        cOhPvStatusConfig &c = OhPvStatusConfig;
+        if      (!strcasecmp(Name, "Interval"))    c.updateInterval = constrain(atoi(Value), 1, 300);
+        else if (!strcasecmp(Name, "UnitMode"))    c.unitMode       = constrain(atoi(Value), 0, 2);
+        else if (!strcasecmp(Name, "InvertPV"))    c.invertPV       = atoi(Value);
+        else if (!strcasecmp(Name, "InvertGrid"))  c.invertGrid     = atoi(Value);
+        else if (!strcasecmp(Name, "InvertBat"))   c.invertBattery  = atoi(Value);
+        else if (!strcasecmp(Name, "InvertHouse")) c.invertHouse    = atoi(Value);
+        else
+            return false;
         return true;
     }
 };

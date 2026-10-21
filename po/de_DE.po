@@ -1,26 +1,36 @@
-# German translation for vdr-ohpvstatus
-# Copyright (C) 2025
+# German translation of vdr-ohpvstatus
+# Copyright (C) 2026 Frank Neumann <fnu@vdr-portal.de>
+# This file is distributed under the same license as the vdr-ohpvstatus package.
 msgid ""
 msgstr ""
-"Project-Id-Version: vdr-ohpvstatus 0.1.0\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-05 15:37+0200\n"
-"PO-Revision-Date: 2025-05-05 12:00+0200\n"
-"Last-Translator: \n"
-"Language-Team: German\n"
+"Project-Id-Version: vdr-ohpvstatus 0.4.0\n"
+"Report-Msgid-Bugs-To: <see README>\n"
+"POT-Creation-Date: 2026-10-21 15:00+0200\n"
+"PO-Revision-Date: 2026-10-21 15:00+0200\n"
+"Last-Translator: Frank Neumann <fnu@vdr-portal.de>\n"
+"Language-Team: German <vdr@linuxtv.org>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+msgid "openHAB PV & Energy Status"
+msgstr "openHAB PV- und Energiestatus"
+
 msgid "openHAB PV Status"
-msgstr ""
+msgstr "openHAB PV-Status"
 
 msgid "Refresh"
 msgstr "Aktualisieren"
 
 msgid "Setup"
 msgstr "Einstellungen"
+
+msgid "n/a"
+msgstr "k. A."
+
+msgid "Reading data from openHAB..."
+msgstr "Lese Daten von openHAB..."
 
 msgid "--- openHAB not reachable ---"
 msgstr "--- openHAB nicht erreichbar ---"
@@ -29,23 +39,23 @@ msgstr "--- openHAB nicht erreichbar ---"
 msgid "Host: %s:%d"
 msgstr "Host: %s:%d"
 
-#, c-format
 msgid "Battery SoC:"
 msgstr "Batterie SoC:"
 
-#, c-format
 msgid "PV Production:"
-msgstr "PV Erzeugung:"
+msgstr "PV-Erzeugung:"
 
-#, c-format
 msgid "House Consumption:"
 msgstr "Hausverbrauch:"
 
 msgid "Battery Charging:"
-msgstr "Batterie laedt:"
+msgstr "Batterie lädt:"
 
 msgid "Battery Discharging:"
-msgstr "Batterie entlaedt:"
+msgstr "Batterie entlädt:"
+
+msgid "Battery:"
+msgstr "Batterie:"
 
 msgid "Grid Import:"
 msgstr "Netzbezug:"
@@ -53,14 +63,20 @@ msgstr "Netzbezug:"
 msgid "Grid Export:"
 msgstr "Netzeinspeisung:"
 
+msgid "Grid:"
+msgstr "Netz:"
+
 msgid "Updated: %H:%M:%S"
 msgstr "Aktualisiert: %H:%M:%S"
+
+msgid "auto"
+msgstr "automatisch"
 
 msgid "Update interval (s)"
 msgstr "Aktualisierungsintervall (s)"
 
 msgid "Unit display"
-msgstr "Einheitendarstellung"
+msgstr "Einheit"
 
 msgid "Invert PV"
 msgstr "PV invertieren"
@@ -73,30 +89,3 @@ msgstr "Batterie invertieren"
 
 msgid "Invert House"
 msgstr "Haus invertieren"
-
-#~ msgid "PV Status"
-#~ msgstr "PV Status"
-
-#~ msgid "openHAB Host"
-#~ msgstr "openHAB Host"
-
-#~ msgid "openHAB Port"
-#~ msgstr "openHAB Port"
-
-#~ msgid "Item PV Power"
-#~ msgstr "Item PV Leistung"
-
-#~ msgid "Item Grid Power"
-#~ msgstr "Item Netzleistung"
-
-#~ msgid "Item Battery Power"
-#~ msgstr "Item Batterieleistung"
-
-#~ msgid "Item House Power"
-#~ msgstr "Item Hausverbrauch"
-
-#~ msgid "Item Battery SoC"
-#~ msgstr "Item Batterie Ladezustand"
-
-#~ msgid "openHAB PV & Energy Status"
-#~ msgstr "openHAB PV & Energie Status"

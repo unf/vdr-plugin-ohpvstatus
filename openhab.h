@@ -1,23 +1,53 @@
-#ifndef __OPENHAB_H
-#define __OPENHAB_H
+/*
+ * openhab.h: reading item states from the openHAB REST API
+ *
+ * See the README file for copyright information and how to reach the author.
+ */
 
-#include <string>
+#ifndef __OHPVSTATUS_OPENHAB_H
+#define __OHPVSTATUS_OPENHAB_H
 
-struct cEnergyData {
-    double pvPower;        // W
-    double gridPower;      // W, positive=import, negative=export
-    double batteryPower;   // W, positive=charging, negative=discharging
-    double housePower;     // W
-    double batterySoC;     // percent 0-100
+#include <time.h>
+#include <vdr/thread.h>
+
+struct cEnergyValue {
+    double value;
     bool   valid;
-
-    cEnergyData()
-    : pvPower(0), gridPower(0), batteryPower(0), housePower(0), batterySoC(0), valid(false) {}
+    cEnergyValue(void) : value(0), valid(false) {}
 };
 
-bool OpenHabFetchItem(const std::string &host, int port, bool useSSL, bool sslVerify,
-                      const std::string &itemName, double &value);
+struct cEnergyData {
+    bool         reachable;   // openHAB answered
+    cEnergyValue pv;          // W
+    cEnergyValue house;       // W
+    cEnergyValue grid;        // W, positive = import, negative = export
+    cEnergyValue battery;     // W, positive = charging, negative = discharging
+    cEnergyValue soc;         // %
+    time_t       timestamp;
+    cEnergyData(void) : reachable(false), timestamp(0) {}
+};
 
-cEnergyData OpenHabFetchAll();
+// Converts an item state like "1234", "1.2 kW" or "85 %" into W resp. %,
+// independent of the locale. "NULL", "UNDEF" and other text give false.
+bool OpenHabParseState(const char *State, double &Value);
 
-#endif //__OPENHAB_H
+// Fetches the items in the background while the status menu is open.
+class cOpenHabPoller : public cThread {
+private:
+    cMutex      mutex_;
+    cCondVar    condVar_;
+    cEnergyData data_;
+    bool        newData_;
+    bool        refresh_;
+    cEnergyData FetchAll(void);
+protected:
+    virtual void Action(void);
+public:
+    cOpenHabPoller(void);
+    virtual ~cOpenHabPoller();
+    void Refresh(void);                  // fetch again now
+    bool GetData(cEnergyData &Data);     // true if there is new data since the last call
+    bool Stopping(void) { return !Running(); }
+};
+
+#endif //__OHPVSTATUS_OPENHAB_H

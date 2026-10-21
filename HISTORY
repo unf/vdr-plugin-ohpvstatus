@@ -1,0 +1,34 @@
+VDR Plugin 'ohpvstatus' Revision History
+----------------------------------------
+
+2026-10-21: Version 0.4.0
+
+- Reviewed and reworked by Claude Opus (Anthropic) on behalf of Frank Neumann.
+- The items are fetched in a background thread while the status menu is open,
+  the OSD and the remote control no longer block while openHAB is slow or not
+  reachable.
+- One HTTP connection for all items, the fetch stops at the first connection
+  error, a running request is aborted when the menu is closed.
+- Item states with units are converted (W, kW, MW, mW, %), the number is read
+  independent of VDR's locale (a German locale turned "1234.5" into 1234 and
+  "0.85" into 0).
+- Missing or invalid items (NULL, UNDEF, wrong name, HTTP 404) are shown as
+  "n/a", "openHAB not reachable" only appears if openHAB does not answer.
+- New option --token for openHAB instances that require an API token.
+- Setup page opened with the blue key now saves to setup.conf.
+- Setup values from setup.conf are checked (interval 1-300 s).
+- --grid-in/--grid-out and --bat-in/--bat-out are checked to come in pairs.
+- curl is initialised once in Initialize(), string copies always terminated.
+- German translation: umlauts, plugin description translated, file renamed
+  to po/de_DE.po like in other VDR plugins.
+- Added README, HISTORY and COPYING.
+
+2026-04: Version 0.3.0
+
+- First version, written by Claude Sonnet (Anthropic) on behalf of Frank
+  Neumann as a test of what is possible.
+- Shows PV production, house consumption, battery charge/discharge, battery
+  state of charge with a bar and grid import/export from openHAB.
+- Host, port, SSL and items on the command line, update interval, unit and
+  invert switches in the setup menu.
+- Grid and battery either as one signed item or as two separate items.

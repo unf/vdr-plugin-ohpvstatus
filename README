@@ -1,0 +1,135 @@
+This is a "plugin" for the Video Disk Recorder (VDR).
+
+Written by:     Frank Neumann <fnu@vdr-portal.de>
+                with Claude (Anthropic): version 0.3.0 was written by Claude
+                Sonnet in April 2026 on Frank's behalf as a test of what is
+                possible, version 0.4.0 was reviewed and reworked by Claude
+                Opus. Credit where credit is due.
+Project's homepage: https://github.com/unf/vdr-plugin-ohpvstatus
+Support:        https://www.vdr-portal.de
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+See the file COPYING for more information.
+
+
+Description
+-----------
+
+ohpvstatus shows the current energy flow of a house with a photovoltaic
+system and a battery, read from an openHAB installation, in the VDR OSD:
+
+  Battery SoC:        85 %      [|||||||||||||||||||||||||     ]
+  PV Production:      4.32 kW
+  House Consumption:  612 W
+  Battery Charging:   1.20 kW
+  Grid Export:        2.51 kW
+
+  Updated: 14:32:07
+
+The plugin adds the main menu entry "openHAB PV Status". While the menu is
+open the values are fetched again every update interval in the background.
+
+  Red    fetch the values now
+  Blue   setup page (update interval, unit, invert switches)
+  Back   close
+
+
+Requirements
+------------
+
+- VDR >= 2.4
+- libcurl
+- openHAB with the REST API (openHAB 2, 3, 4 or 5)
+- for the SoC bar: a font that draws '|' as a bar segment, e.g. the
+  vdrsymbols fonts, any other font shows plain '|' characters
+
+
+Command line options
+--------------------
+
+Connection:
+
+  -H HOST, --host=HOST    openHAB hostname or IP (default: 127.0.0.1)
+  -P PORT, --port=PORT    openHAB port (default: 8080)
+  --ssl                   use HTTPS instead of HTTP
+  --ssl-verify=no         do not verify the SSL certificate (self-signed)
+  --token=TOKEN           openHAB API token, only needed if openHAB does not
+                          allow anonymous read access to the items. Create it
+                          in the openHAB UI under your user profile, "API
+                          Tokens". The token is sent as "Authorization:
+                          Bearer". Note that VDR's plugin argument files are
+                          usually readable by every user.
+
+Items (default item names in brackets):
+
+  --pv=ITEM               PV power (PVPower)
+  --house=ITEM            house power (HousePower)
+  --soc=ITEM              battery state of charge in % (BatterySoC),
+                          --soc= without item hides the SoC line
+
+Grid, choose one variant:
+
+  --grid=ITEM             one item, positive = import, negative = export
+                          (GridPower)
+  --grid-in=ITEM          two items, import and export, both always positive.
+  --grid-out=ITEM         Both must be given, otherwise --grid is used.
+
+Battery, choose one variant:
+
+  --battery=ITEM          one item, positive = charging, negative =
+                          discharging (BatteryPower)
+  --bat-in=ITEM           two items, charging and discharging, both always
+  --bat-out=ITEM          positive. Both must be given, otherwise --battery
+                          is used.
+
+On Debian the options are set in /etc/vdr/conf.avail/ohpvstatus.conf,
+otherwise with -P"ohpvstatus -H 192.168.1.10 --grid=MyGridItem ...".
+
+If your items use the opposite sign convention (for example a battery that
+reports charging as negative), use the invert switches in the setup menu
+instead of changing openHAB.
+
+
+Setup menu
+----------
+
+  Update interval (s)   1-300 seconds, default 10
+  Unit display          auto (W below 1000 W, kW above), W or kW
+  Invert PV/Grid/Battery/House
+                        multiply the value by -1 before it is shown
+
+The values are stored in VDR's setup.conf.
+
+
+How the values are read
+-----------------------
+
+For every item the plugin reads
+
+  http://HOST:PORT/rest/items/ITEM/state
+
+over one HTTP connection. The state may be a plain number ("1234.5") or a
+quantity with unit ("1.2 kW", "85 %"). W, kW, MW and mW are converted to W.
+The number is always read with a decimal point, independent of VDR's locale.
+
+A test from the VDR machine shows what the plugin gets:
+
+  curl http://HOST:8080/rest/items/PVPower/state
+
+An item that does not exist, has the state NULL or UNDEF or needs a token
+that was not given is shown as "n/a". "openHAB not reachable" means that
+openHAB did not answer at all (wrong host or port, firewall, openHAB not
+running), see the VDR log for the curl error.
+
+
+Files
+-----
+
+  README       this file
+  HISTORY      changes
+  COPYING      GNU General Public License version 2
+  po/          translations (German)

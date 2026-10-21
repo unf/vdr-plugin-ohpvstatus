@@ -1,159 +1,152 @@
+/*
+ * menu.cpp: status display and setup page of the ohpvstatus plugin
+ *
+ * See the README file for copyright information and how to reach the author.
+ */
+
 #include "menu.h"
 #include "ohpvstatus.h"
 #include <vdr/plugin.h>
-#include <cstdio>
 #include <cmath>
-#include <ctime>
+#include <cstdio>
 #include <cstring>
+#include <ctime>
 
 #define BARLEN 30
 
-// ---- Leistungsformatierung -------------------------------------------------
+// ---- formatting --------------------------------------------------------------
 
-cString cMenuOhPvStatus::FormatPower(double watts) const
+cString cMenuOhPvStatus::FormatPower(double Watts) const
 {
-    char buf[32];
     int mode = OhPvStatusConfig.unitMode;
-    bool useKW = (mode == 2) || (mode == 0 && std::fabs(watts) >= 1000.0);
-
+    bool useKW = (mode == umKW) || (mode == umAuto && std::fabs(Watts) >= 1000.0);
     if (useKW)
-        snprintf(buf, sizeof(buf), "%.2f kW", watts / 1000.0);
-    else
-        snprintf(buf, sizeof(buf), "%.0f W", watts);
-
-    return buf;
+        return cString::sprintf("%.2f kW", Watts / 1000.0);
+    return cString::sprintf("%.0f W", Watts);
 }
 
-// ---- SoC Balken ------------------------------------------------------------
-// % in Spalte 2, Balken in Spalte 3
-// '|' wird von vdrsymbols als grafischer Balken dargestellt
-
-cString cMenuOhPvStatus::FormatSoCBar(double soc) const
+// '|' is drawn as a bar segment by the vdrsymbols fonts
+cString cMenuOhPvStatus::FormatSoCBar(double SoC) const
 {
-    if (soc < 0)   soc = 0;
-    if (soc > 100) soc = 100;
-
-    int filled = (int)((soc / 100.0) * BARLEN + 0.5);
-
+    if (SoC < 0)
+        SoC = 0;
+    if (SoC > 100)
+        SoC = 100;
+    int filled = (int)((SoC / 100.0) * BARLEN + 0.5);
     char bar[BARLEN + 3];
     bar[0] = '[';
-    memset(bar + 1,          '|', filled);
+    memset(bar + 1, '|', filled);
     memset(bar + 1 + filled, ' ', BARLEN - filled);
     bar[BARLEN + 1] = ']';
     bar[BARLEN + 2] = '\0';
-
     return bar;
 }
 
-// ---- cMenuOhPvStatus -------------------------------------------------------
-// Drei Spalten: Label (18) | Wert (10) | Balken (Rest)
+// ---- cMenuOhPvStatus ---------------------------------------------------------
+// three columns: label | value | bar
 
-cMenuOhPvStatus::cMenuOhPvStatus()
-: cOsdMenu(tr("openHAB PV Status"), 18, 10), lastUpdate_(0)
+cMenuOhPvStatus::cMenuOhPvStatus(void)
+: cOsdMenu(tr("openHAB PV Status"), 20, 12), haveData_(false)
 {
     SetHelp(tr("Refresh"), NULL, NULL, tr("Setup"));
-    Fetch();
+    poller_.Start();
     BuildDisplay();
 }
 
-void cMenuOhPvStatus::Fetch()
+void cMenuOhPvStatus::AddPower(const char *Label, const cEnergyValue &Value, bool Invert)
 {
-    data_       = OpenHabFetchAll();
-    lastUpdate_ = time(NULL);
+    if (Value.valid)
+        Add(new cOsdItem(cString::sprintf("%s\t%s", Label, *FormatPower(Invert ? -Value.value : Value.value)), osUnknown, false));
+    else
+        Add(new cOsdItem(cString::sprintf("%s\t%s", Label, tr("n/a")), osUnknown, false));
 }
 
-void cMenuOhPvStatus::BuildDisplay()
+void cMenuOhPvStatus::AddSignedPower(const char *LabelPos, const char *LabelNeg, const char *LabelNone,
+                                     const cEnergyValue &Value, bool Invert)
 {
+    if (!Value.valid) {
+        Add(new cOsdItem(cString::sprintf("%s\t%s", LabelNone, tr("n/a")), osUnknown, false));
+        return;
+    }
+    double w = Invert ? -Value.value : Value.value;
+    Add(new cOsdItem(cString::sprintf("%s\t%s", w >= 0 ? LabelPos : LabelNeg, *FormatPower(std::fabs(w))), osUnknown, false));
+}
+
+void cMenuOhPvStatus::BuildDisplay(void)
+{
+    const cOhPvStatusConfig &c = OhPvStatusConfig;
     Clear();
 
-    if (!data_.valid) {
+    if (!haveData_) {
+        Add(new cOsdItem(tr("Reading data from openHAB..."), osUnknown, false));
+    }
+    else if (!data_.reachable) {
         Add(new cOsdItem(tr("--- openHAB not reachable ---"), osUnknown, false));
         Add(new cOsdItem("", osUnknown, false));
-        char buf[256];
-        snprintf(buf, sizeof(buf), tr("Host: %s:%d"),
-                 OhPvStatusConfig.openhabHost, OhPvStatusConfig.openhabPort);
-        Add(new cOsdItem(buf, osUnknown, false));
-    } else {
-        // Batterie SoC mit Balken - ganz oben
-        if (OhPvStatusConfig.itemSoC[0] != '\0') {
-            char pct[16];
-            snprintf(pct, sizeof(pct), "%.0f%%", data_.batterySoC);
-            Add(new cOsdItem(cString::sprintf("%s\t%s\t%s",
-                tr("Battery SoC:"), pct, *FormatSoCBar(data_.batterySoC)),
-                osUnknown, false));
+        Add(new cOsdItem(cString::sprintf(tr("Host: %s:%d"), c.openhabHost, c.openhabPort), osUnknown, false));
+    }
+    else {
+        if (c.itemSoC[0]) {
+            if (data_.soc.valid)
+                Add(new cOsdItem(cString::sprintf("%s\t%.0f %%\t%s", tr("Battery SoC:"), data_.soc.value, *FormatSoCBar(data_.soc.value)), osUnknown, false));
+            else
+                Add(new cOsdItem(cString::sprintf("%s\t%s", tr("Battery SoC:"), tr("n/a")), osUnknown, false));
         }
+        AddPower(tr("PV Production:"), data_.pv, c.invertPV);
+        AddPower(tr("House Consumption:"), data_.house, c.invertHouse);
+        AddSignedPower(tr("Battery Charging:"), tr("Battery Discharging:"), tr("Battery:"), data_.battery, c.invertBattery);
+        AddSignedPower(tr("Grid Import:"), tr("Grid Export:"), tr("Grid:"), data_.grid, c.invertGrid);
 
-        // PV Erzeugung
-        double pvW = OhPvStatusConfig.invertPV ? -data_.pvPower : data_.pvPower;
-        Add(new cOsdItem(cString::sprintf("%s\t%s",
-            tr("PV Production:"), *FormatPower(pvW)), osUnknown, false));
-
-        // Hausverbrauch
-        double houseW = OhPvStatusConfig.invertHouse ? -data_.housePower : data_.housePower;
-        Add(new cOsdItem(cString::sprintf("%s\t%s",
-            tr("House Consumption:"), *FormatPower(houseW)), osUnknown, false));
-
-        // Batterieleistung
-        double batW = OhPvStatusConfig.invertBattery
-                      ? -data_.batteryPower : data_.batteryPower;
-        const char *batLabel = (batW >= 0)
-                               ? tr("Battery Charging:")
-                               : tr("Battery Discharging:");
-        Add(new cOsdItem(cString::sprintf("%s\t%s",
-            batLabel, *FormatPower(std::fabs(batW))), osUnknown, false));
-
-        // Netz
-        double gridW = OhPvStatusConfig.invertGrid
-                       ? -data_.gridPower : data_.gridPower;
-        const char *gridLabel = (gridW >= 0)
-                                ? tr("Grid Import:")
-                                : tr("Grid Export:");
-        Add(new cOsdItem(cString::sprintf("%s\t%s",
-            gridLabel, *FormatPower(std::fabs(gridW))), osUnknown, false));
-
-        // Zeitstempel
         Add(new cOsdItem("", osUnknown, false));
         char timebuf[64];
-        struct tm *tm = localtime(&lastUpdate_);
-        strftime(timebuf, sizeof(timebuf), tr("Updated: %H:%M:%S"), tm);
+        struct tm tm;
+        localtime_r(&data_.timestamp, &tm);
+        strftime(timebuf, sizeof(timebuf), tr("Updated: %H:%M:%S"), &tm);
         Add(new cOsdItem(timebuf, osUnknown, false));
     }
-
     Display();
 }
 
 eOSState cMenuOhPvStatus::ProcessKey(eKeys Key)
 {
-    if (lastUpdate_ > 0 &&
-        (time(NULL) - lastUpdate_) >= OhPvStatusConfig.updateInterval) {
-        Fetch();
-        BuildDisplay();
-    }
-
+    bool hadSubMenu = HasSubMenu();
     eOSState state = cOsdMenu::ProcessKey(Key);
+    if (HasSubMenu())
+        return state;                     // never draw over the setup page
 
-    switch (Key) {
-        case kRed:
-            Fetch();
-            BuildDisplay();
-            return osContinue;
-        case kBlue:
-            return AddSubMenu(static_cast<cOsdMenu*>(new cMenuOhPvStatusSetup()));
-        default:
-            break;
+    bool rebuild = hadSubMenu;            // the setup may have changed unit or invert
+    if (poller_.GetData(data_)) {
+        haveData_ = true;
+        rebuild = true;
     }
-
+    if (state == osUnknown) {
+        switch (Key) {
+            case kRed:
+                poller_.Refresh();
+                state = osContinue;
+                break;
+            case kBlue: {
+                cMenuOhPvStatusSetup *setup = new cMenuOhPvStatusSetup;
+                setup->SetPlugin(cPluginManager::GetPlugin(PLUGIN_NAME_I18N));   // so that Store() saves to setup.conf
+                return AddSubMenu(setup);
+            }
+            default:
+                break;
+        }
+    }
+    if (rebuild)
+        BuildDisplay();
     return state;
 }
 
-// ---- cMenuOhPvStatusSetup --------------------------------------------------
+// ---- cMenuOhPvStatusSetup ----------------------------------------------------
 
-const char * const cMenuOhPvStatusSetup::unitModeNames_[] = {
-    "Auto", "W", "kW", NULL
-};
-
-cMenuOhPvStatusSetup::cMenuOhPvStatusSetup()
+cMenuOhPvStatusSetup::cMenuOhPvStatusSetup(void)
 {
+    unitModeNames_[umAuto] = tr("auto");
+    unitModeNames_[umW]    = "W";
+    unitModeNames_[umKW]   = "kW";
+
     tempInterval_      = OhPvStatusConfig.updateInterval;
     tempInvertPV_      = OhPvStatusConfig.invertPV;
     tempInvertGrid_    = OhPvStatusConfig.invertGrid;
@@ -161,15 +154,15 @@ cMenuOhPvStatusSetup::cMenuOhPvStatusSetup()
     tempInvertHouse_   = OhPvStatusConfig.invertHouse;
     tempUnitMode_      = OhPvStatusConfig.unitMode;
 
-    Add(new cMenuEditIntItem (tr("Update interval (s)"), &tempInterval_,   1, 300));
-    Add(new cMenuEditStraItem(tr("Unit display"),        &tempUnitMode_,   3, unitModeNames_));
+    Add(new cMenuEditIntItem (tr("Update interval (s)"), &tempInterval_, 1, 300));
+    Add(new cMenuEditStraItem(tr("Unit display"),        &tempUnitMode_, 3, unitModeNames_));
     Add(new cMenuEditBoolItem(tr("Invert PV"),           &tempInvertPV_));
     Add(new cMenuEditBoolItem(tr("Invert Grid"),         &tempInvertGrid_));
     Add(new cMenuEditBoolItem(tr("Invert Battery"),      &tempInvertBattery_));
     Add(new cMenuEditBoolItem(tr("Invert House"),        &tempInvertHouse_));
 }
 
-void cMenuOhPvStatusSetup::Store()
+void cMenuOhPvStatusSetup::Store(void)
 {
     OhPvStatusConfig.updateInterval = tempInterval_;
     OhPvStatusConfig.unitMode       = tempUnitMode_;
