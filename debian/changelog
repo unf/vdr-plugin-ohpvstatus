@@ -1,0 +1,23 @@
+vdr-plugin-ohpvstatus (0.4.0-1fnu0~trixie) trixie; urgency=medium
+
+  * new upstream release 0.4.0, reviewed and reworked by Claude Opus:
+    items fetched in a background thread (OSD no longer blocks), one
+    HTTP connection, units W/kW/MW and %, locale independent numbers,
+    missing items shown as n/a, new option --token, setup via blue key
+    saves to setup.conf, German translation with umlauts as po/de_DE.po
+  * added README, HISTORY and COPYING, README installed, HISTORY as
+    upstream changelog
+  * debian/copyright: credits Claude (Anthropic) as co-author
+  * upstream is now https://github.com/unf/vdr-plugin-ohpvstatus, Homepage
+    and watch point there
+
+ -- Frank Neumann <fnu@vdr-portal.de>  Wed, 21 Oct 2026 14:35:01 +0200
+
+vdr-plugin-ohpvstatus (0.3.0-1fnu0~trixie) trixie; urgency=medium
+
+  * Initial release in the vdr-portal.de repository: 0.3.0 with PV, house,
+    battery and grid power, battery state of charge and invert switches
+  * built for VDR 2.8.3 (vdr-abi-2.8.3-fnu0)
+  * ohpvstatus.conf as /etc/vdr/conf.avail/ohpvstatus.conf (priority 50)
+
+ -- Frank Neumann <fnu@vdr-portal.de>  Wed, 21 Oct 2026 14:23:47 +0200

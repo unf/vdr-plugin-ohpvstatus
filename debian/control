@@ -1,0 +1,19 @@
+Source: vdr-plugin-ohpvstatus
+Section: video
+Priority: optional
+Maintainer: Frank Neumann <fnu@vdr-portal.de>
+Build-Depends: debhelper-compat (= 13), vdr-dev (>= 2.8.3), gettext, pkgconf,
+ libcurl4-openssl-dev
+Standards-Version: 4.7.2
+Rules-Requires-Root: no
+Homepage: https://github.com/unf/vdr-plugin-ohpvstatus
+
+Package: vdr-plugin-ohpvstatus
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${vdr:Depends}
+Description: VDR plugin to display openHAB PV and energy status
+ Displays real-time energy data from an openHAB installation in the VDR
+ OSD: PV production, house consumption, battery charge/discharge, battery
+ state of charge (with bar) and grid import/export. Host, port and items
+ are set in /etc/vdr/conf.avail/ohpvstatus.conf, display options in the
+ VDR setup menu.
