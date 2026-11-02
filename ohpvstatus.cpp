@@ -58,7 +58,7 @@ public:
             "                  --label1=TEXT        its label (default: the item name),\n"
             "                                       quote texts with spaces: --label1=\"My text\"\n"
             "                  --decimals1=N        decimals of a numeric state (0-3, default: 1)\n"
-            "                  --line2=ITEM, --label2=TEXT, --decimals2=N   free line 2\n";
+            "                  --line2..4, --label2..4, --decimals2..4      free lines 2 to 4\n";
     }
 
     virtual bool ProcessArgs(int argc, char *argv[])
@@ -69,9 +69,11 @@ public:
             OPT_BAT, OPT_BAT_IN, OPT_BAT_OUT,
             OPT_SSL, OPT_SSL_VERIFY, OPT_TOKEN,
             OPT_PV_TODAY,
-            OPT_LINE1, OPT_LABEL1, OPT_DECIMALS1,
-            OPT_LINE2, OPT_LABEL2, OPT_DECIMALS2
+            OPT_LINE     = 300,                  // OPT_LINE + i = --line<i+1>
+            OPT_LABEL    = OPT_LINE  + NUMLINES,
+            OPT_DECIMALS = OPT_LABEL + NUMLINES
         };
+        static_assert(NUMLINES == 4, "long_options below lists four free lines");
         static struct option long_options[] = {
             { "host",       required_argument, NULL, 'H'            },
             { "port",       required_argument, NULL, 'P'            },
@@ -88,12 +90,18 @@ public:
             { "bat-in",     required_argument, NULL, OPT_BAT_IN     },
             { "bat-out",    required_argument, NULL, OPT_BAT_OUT    },
             { "pv-today",   required_argument, NULL, OPT_PV_TODAY   },
-            { "line1",      required_argument, NULL, OPT_LINE1      },
-            { "label1",     required_argument, NULL, OPT_LABEL1     },
-            { "decimals1",  required_argument, NULL, OPT_DECIMALS1  },
-            { "line2",      required_argument, NULL, OPT_LINE2      },
-            { "label2",     required_argument, NULL, OPT_LABEL2     },
-            { "decimals2",  required_argument, NULL, OPT_DECIMALS2  },
+            { "line1",      required_argument, NULL, OPT_LINE + 0     },
+            { "line2",      required_argument, NULL, OPT_LINE + 1     },
+            { "line3",      required_argument, NULL, OPT_LINE + 2     },
+            { "line4",      required_argument, NULL, OPT_LINE + 3     },
+            { "label1",     required_argument, NULL, OPT_LABEL + 0    },
+            { "label2",     required_argument, NULL, OPT_LABEL + 1    },
+            { "label3",     required_argument, NULL, OPT_LABEL + 2    },
+            { "label4",     required_argument, NULL, OPT_LABEL + 3    },
+            { "decimals1",  required_argument, NULL, OPT_DECIMALS + 0 },
+            { "decimals2",  required_argument, NULL, OPT_DECIMALS + 1 },
+            { "decimals3",  required_argument, NULL, OPT_DECIMALS + 2 },
+            { "decimals4",  required_argument, NULL, OPT_DECIMALS + 3 },
             { NULL, 0, NULL, 0 }
         };
 
@@ -116,13 +124,16 @@ public:
                 case OPT_BAT_IN:     strn0cpy(c.itemBatIn,   optarg, sizeof(c.itemBatIn));   break;
                 case OPT_BAT_OUT:    strn0cpy(c.itemBatOut,  optarg, sizeof(c.itemBatOut));  break;
                 case OPT_PV_TODAY:   strn0cpy(c.itemPVToday, optarg, sizeof(c.itemPVToday)); break;
-                case OPT_LINE1:      strn0cpy(c.itemLine[0],  optarg, sizeof(c.itemLine[0]));  break;
-                case OPT_LABEL1:     strn0cpy(c.labelLine[0], optarg, sizeof(c.labelLine[0])); break;
-                case OPT_DECIMALS1:  c.decimalsLine[0] = constrain(atoi(optarg), 0, 3); break;
-                case OPT_LINE2:      strn0cpy(c.itemLine[1],  optarg, sizeof(c.itemLine[1]));  break;
-                case OPT_LABEL2:     strn0cpy(c.labelLine[1], optarg, sizeof(c.labelLine[1])); break;
-                case OPT_DECIMALS2:  c.decimalsLine[1] = constrain(atoi(optarg), 0, 3); break;
-                default:             return false;
+                default:
+                    if (opt >= OPT_LINE && opt < OPT_LINE + NUMLINES)
+                        strn0cpy(c.itemLine[opt - OPT_LINE], optarg, sizeof(c.itemLine[0]));
+                    else if (opt >= OPT_LABEL && opt < OPT_LABEL + NUMLINES)
+                        strn0cpy(c.labelLine[opt - OPT_LABEL], optarg, sizeof(c.labelLine[0]));
+                    else if (opt >= OPT_DECIMALS && opt < OPT_DECIMALS + NUMLINES)
+                        c.decimalsLine[opt - OPT_DECIMALS] = constrain(atoi(optarg), 0, 3);
+                    else
+                        return false;
+                    break;
             }
         }
         if (c.openhabPort <= 0 || c.openhabPort > 65535) {

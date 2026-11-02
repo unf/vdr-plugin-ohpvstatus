@@ -167,8 +167,6 @@ cEnergyData cOpenHabPoller::FetchAll(void)
         { gridSplit ? c.itemGridOut : NULL,           &gridOut },
         { batSplit  ? c.itemBatIn   : c.itemBattery,  batSplit ? &batIn : &d.battery },
         { batSplit  ? c.itemBatOut  : NULL,           &batOut },
-        { c.itemLine[0],                              &d.line[0] },
-        { c.itemLine[1],                              &d.line[1] },
     };
 
     // one connection for all items, stop at the first connection error
@@ -180,6 +178,10 @@ cEnergyData cOpenHabPoller::FetchAll(void)
             d.reachable = false;
             break;
         }
+    }
+    for (int i = 0; i < NUMLINES && d.reachable && Running(); i++) {
+        if (c.itemLine[i][0] && FetchItem(curl, base, c.itemLine[i], d.line[i]) == frUnreachable)
+            d.reachable = false;
     }
     if (gridSplit && gridIn.valid && gridOut.valid) {
         d.grid.value = gridIn.value - gridOut.value;   // import positive, export negative

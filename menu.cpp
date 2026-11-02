@@ -125,9 +125,9 @@ void cMenuOhPvStatus::BuildDisplay(void)
             else
                 Add(new cOsdItem(cString::sprintf("%s\t%s", tr("Battery SoC:"), tr("n/a")), osUnknown, false));
         }
-        AddPower(tr("PV Production:"), data_.pv, c.invertPV);
         if (c.itemPVToday[0])
             AddEnergy(tr("PV Today:"), data_.pvToday);
+        AddPower(tr("PV Production:"), data_.pv, c.invertPV);
         AddPower(tr("House Consumption:"), data_.house, c.invertHouse);
         AddSignedPower(tr("Battery Charging:"), tr("Battery Discharging:"), tr("Battery:"), data_.battery, c.invertBattery);
         AddSignedPower(tr("Grid Import:"), tr("Grid Export:"), tr("Grid:"), data_.grid, c.invertGrid);

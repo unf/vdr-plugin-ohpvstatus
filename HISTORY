@@ -4,10 +4,10 @@ VDR Plugin 'ohpvstatus' Revision History
 2026-11-xx: Version 0.5.0
 
 - New optional line "PV Today" with the PV energy of today (--pv-today),
-  shown in Wh or kWh like the power values.
-- Two free lines for any item (--line1/--line2) with their own label
-  (--label1/--label2) and decimals (--decimals1/--decimals2), e.g. for the
-  autarky of today. A number is shown with the unit openHAB sends, a text
+  shown below the SoC in Wh or kWh like the power values.
+- Four free lines for any item (--line1..4) with their own label
+  (--label1..4) and decimals (--decimals1..4), e.g. for the autarky of
+  today. A number is shown with the unit openHAB sends, a text
   state as it is. Optional lines are only shown if an item is given.
 - Wh, kWh, MWh and mWh are converted to Wh. Units that only end in W or Wh
   (e.g. "ct/kWh") are left as they are.

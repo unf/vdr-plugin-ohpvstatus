@@ -24,8 +24,8 @@ ohpvstatus shows the current energy flow of a house with a photovoltaic
 system and a battery, read from an openHAB installation, in the VDR OSD:
 
   Battery SoC:        85 %      [|||||||||||||||||||||||||     ]
-  PV Production:      4.32 kW
   PV Today:           18.47 kWh
+  PV Production:      4.32 kW
   House Consumption:  612 W
   Battery Charging:   1.20 kW
   Grid Export:        2.51 kW
@@ -33,8 +33,8 @@ system and a battery, read from an openHAB installation, in the VDR OSD:
 
   Updated: 14:32:07
 
-"PV Today" and the free lines at the end (here "Autarky today") are
-optional, they are only shown if an item is given.
+"PV Today" and up to four free lines at the end (here "Autarky today")
+are optional, they are only shown if an item is given.
 
 The plugin adds the main menu entry "openHAB PV Status". While the menu is
 open the values are fetched again every update interval in the background.
@@ -105,8 +105,11 @@ Optional lines, only shown if an item is given:
                           Quote a text with spaces: --label1="Autarky today"
   --decimals1=N           decimals of a number in free line 1, 0-3
                           (default: 1)
-  --line2=ITEM, --label2=TEXT, --decimals2=N
-                          the same for free line 2
+  --line2..4, --label2..4, --decimals2..4
+                          the same for free lines 2 to 4, e.g.
+                          --line3=ITEM --label3=TEXT --decimals3=N
+                          The free lines are shown in the order 1 to 4,
+                          lines without an item are left out.
 
 On Debian the options are set in /etc/vdr/conf.avail/ohpvstatus.conf,
 otherwise with -P"ohpvstatus -H 192.168.1.10 --grid=MyGridItem ...".
