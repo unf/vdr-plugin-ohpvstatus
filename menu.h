@@ -19,6 +19,9 @@ private:
 
     void    BuildDisplay(void);
     void    AddPower(const char *Label, const cEnergyValue &Value, bool Invert);
+    void    AddEnergy(const char *Label, const cEnergyValue &Value);
+    void    AddLine(int Index, const cEnergyValue &Value);
+    cString FormatEnergy(double Wh) const;
     void    AddSignedPower(const char *LabelPos, const char *LabelNeg, const char *LabelNone,
                            const cEnergyValue &Value, bool Invert);
     cString FormatPower(double Watts) const;

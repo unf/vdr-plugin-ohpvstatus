@@ -1,6 +1,17 @@
 VDR Plugin 'ohpvstatus' Revision History
 ----------------------------------------
 
+2026-11-02: Version 0.5.0
+
+- New optional line "PV Today" with the PV energy of today (--pv-today),
+  shown below the SoC in Wh or kWh like the power values.
+- Four free lines for any item (--line1..4) with their own label
+  (--label1..4) and decimals (--decimals1..4), e.g. for the autarky of
+  today. A number is shown with the unit openHAB sends, a text
+  state as it is. Optional lines are only shown if an item is given.
+- Wh, kWh, MWh and mWh are converted to Wh. Units that only end in W or Wh
+  (e.g. "ct/kWh") are left as they are.
+
 2026-10-21: Version 0.4.0
 
 - Reviewed and reworked by Claude Opus (Anthropic) on behalf of Frank Neumann.
@@ -26,7 +37,7 @@ VDR Plugin 'ohpvstatus' Revision History
 2026-04: Version 0.3.0
 
 - First version, written by Claude Sonnet (Anthropic) on behalf of Frank
-  Neumann as a test of what is possible.
+  Neumann as an experiment in AI-assisted software prototyping.
 - Shows PV production, house consumption, battery charge/discharge, battery
   state of charge with a bar and grid import/export from openHAB.
 - Host, port, SSL and items on the command line, update interval, unit and

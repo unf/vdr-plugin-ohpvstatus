@@ -8,6 +8,7 @@
 #define __OHPVSTATUS_H
 
 #include <vdr/tools.h>
+#include "openhab.h"
 
 enum eUnitMode { umAuto = 0, umW = 1, umKW = 2 };
 
@@ -29,6 +30,10 @@ struct cOhPvStatusConfig {
     char itemBattery[128];    // single item, positive = charging, negative = discharging
     char itemBatIn[128];      // or two items: battery charging (always positive)
     char itemBatOut[128];     //               battery discharging (always positive)
+    char itemPVToday[128];    // PV energy of today, empty = line hidden
+    char itemLine[NUMLINES][128];   // free lines, empty = line hidden
+    char labelLine[NUMLINES][64];   // their labels, empty = item name
+    int  decimalsLine[NUMLINES];    // decimals of a numeric state
 
     // display options, stored in setup.conf
     int  updateInterval;      // seconds
@@ -54,6 +59,12 @@ struct cOhPvStatusConfig {
         strn0cpy(itemBattery, "BatteryPower", sizeof(itemBattery));
         itemBatIn[0]   = '\0';
         itemBatOut[0]  = '\0';
+        itemPVToday[0] = '\0';
+        for (int i = 0; i < NUMLINES; i++) {
+            itemLine[i][0]  = '\0';
+            labelLine[i][0] = '\0';
+            decimalsLine[i] = 1;
+        }
 
         updateInterval = 10;
         invertPV       = 0;

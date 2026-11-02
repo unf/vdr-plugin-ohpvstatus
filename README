@@ -1,10 +1,11 @@
 This is a "plugin" for the Video Disk Recorder (VDR).
 
 Written by:     Frank Neumann <fnu@vdr-portal.de>
-                with Claude (Anthropic): version 0.3.0 was written by Claude
-                Sonnet in April 2026 on Frank's behalf as a test of what is
-                possible, version 0.4.0 was reviewed and reworked by Claude
-                Opus. Credit where credit is due.
+                together with Claude (Anthropic). Version 0.3.0 and earlier
+                were written by Claude Sonnet in April 2026 on Frank's behalf
+                as an experiment in AI-assisted software prototyping.
+                Version 0.4.0 was reviewed and reworked by Claude Opus.
+                Credit where credit is due.
 Project's homepage: https://github.com/unf/vdr-plugin-ohpvstatus
 Support:        https://www.vdr-portal.de
 
@@ -23,12 +24,17 @@ ohpvstatus shows the current energy flow of a house with a photovoltaic
 system and a battery, read from an openHAB installation, in the VDR OSD:
 
   Battery SoC:        85 %      [|||||||||||||||||||||||||     ]
+  PV Today:           18.47 kWh
   PV Production:      4.32 kW
   House Consumption:  612 W
   Battery Charging:   1.20 kW
   Grid Export:        2.51 kW
+  Autarky today:      87.8 %
 
   Updated: 14:32:07
+
+"PV Today" and up to four free lines at the end (here "Autarky today")
+are optional, they are only shown if an item is given.
 
 The plugin adds the main menu entry "openHAB PV Status". While the menu is
 open the values are fetched again every update interval in the background.
@@ -86,6 +92,25 @@ Battery, choose one variant:
   --bat-out=ITEM          positive. Both must be given, otherwise --battery
                           is used.
 
+Optional lines, only shown if an item is given:
+
+  --pv-today=ITEM         PV energy of today. The state may be a plain
+                          number in Wh or a quantity in Wh, kWh or MWh. It is
+                          shown in Wh or kWh like the power values (unit
+                          setting in the setup menu).
+  --line1=ITEM            free line 1, any item. A number is shown with the
+                          unit openHAB sends ("87.8 %", "28.06 ct/kWh"),
+                          a text state ("ON") as it is.
+  --label1=TEXT           label of free line 1 (default: the item name).
+                          Quote a text with spaces: --label1="Autarky today"
+  --decimals1=N           decimals of a number in free line 1, 0-3
+                          (default: 1)
+  --line2..4, --label2..4, --decimals2..4
+                          the same for free lines 2 to 4, e.g.
+                          --line3=ITEM --label3=TEXT --decimals3=N
+                          The free lines are shown in the order 1 to 4,
+                          lines without an item are left out.
+
 On Debian the options are set in /etc/vdr/conf.avail/ohpvstatus.conf,
 otherwise with -P"ohpvstatus -H 192.168.1.10 --grid=MyGridItem ...".
 
@@ -113,7 +138,8 @@ For every item the plugin reads
   http://HOST:PORT/rest/items/ITEM/state
 
 over one HTTP connection. The state may be a plain number ("1234.5") or a
-quantity with unit ("1.2 kW", "85 %"). W, kW, MW and mW are converted to W.
+quantity with unit ("1.2 kW", "85 %"). W, kW, MW and mW are converted to W,
+Wh, kWh, MWh and mWh to Wh.
 The number is always read with a decimal point, independent of VDR's locale.
 
 A test from the VDR machine shows what the plugin gets:
@@ -125,6 +151,22 @@ that was not given is shown as "n/a". "openHAB not reachable" means that
 openHAB did not answer at all (wrong host or port, firewall, openHAB not
 running), see the VDR log for the curl error.
 
+
+Debian packages
+---------------
+
+Ready-made packages for Debian 13 (trixie) and VDR 2.8 are in the
+vdr-portal.de APT repository (vdr-plugin-ohpvstatus).
+
+The Debian packaging is kept in the branch debian/trixie of this
+repository, on top of the release tag. To build the package yourself:
+
+  git clone https://github.com/unf/vdr-plugin-ohpvstatus.git
+  cd vdr-plugin-ohpvstatus
+  git checkout debian/trixie
+  gbp buildpackage
+
+This needs git-buildpackage and vdr-dev of the VDR the plugin is built for.
 
 Files
 -----
