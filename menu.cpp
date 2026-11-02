@@ -25,6 +25,15 @@ cString cMenuOhPvStatus::FormatPower(double Watts) const
     return cString::sprintf("%.0f W", Watts);
 }
 
+cString cMenuOhPvStatus::FormatEnergy(double Wh) const
+{
+    int mode = OhPvStatusConfig.unitMode;
+    bool useKWh = (mode == umKW) || (mode == umAuto && std::fabs(Wh) >= 1000.0);
+    if (useKWh)
+        return cString::sprintf("%.2f kWh", Wh / 1000.0);
+    return cString::sprintf("%.0f Wh", Wh);
+}
+
 // '|' is drawn as a bar segment by the vdrsymbols fonts
 cString cMenuOhPvStatus::FormatSoCBar(double SoC) const
 {
@@ -61,6 +70,30 @@ void cMenuOhPvStatus::AddPower(const char *Label, const cEnergyValue &Value, boo
         Add(new cOsdItem(cString::sprintf("%s\t%s", Label, tr("n/a")), osUnknown, false));
 }
 
+void cMenuOhPvStatus::AddEnergy(const char *Label, const cEnergyValue &Value)
+{
+    if (Value.valid)
+        Add(new cOsdItem(cString::sprintf("%s\t%s", Label, *FormatEnergy(Value.value)), osUnknown, false));
+    else
+        Add(new cOsdItem(cString::sprintf("%s\t%s", Label, tr("n/a")), osUnknown, false));
+}
+
+// a free line shows the number with the configured decimals and the unit as
+// openHAB sent it, a text state (e.g. "ON") as it is
+void cMenuOhPvStatus::AddLine(int Index, const cEnergyValue &Value)
+{
+    const cOhPvStatusConfig &c = OhPvStatusConfig;
+    cString label = cString::sprintf("%s:", c.labelLine[Index][0] ? c.labelLine[Index] : c.itemLine[Index]);
+    cString value;
+    if (Value.valid)
+        value = cString::sprintf("%.*f%s%s", c.decimalsLine[Index], Value.raw, Value.unit[0] ? " " : "", Value.unit);
+    else if (Value.present)
+        value = Value.text;
+    else
+        value = tr("n/a");
+    Add(new cOsdItem(cString::sprintf("%s\t%s", *label, *value), osUnknown, false));
+}
+
 void cMenuOhPvStatus::AddSignedPower(const char *LabelPos, const char *LabelNeg, const char *LabelNone,
                                      const cEnergyValue &Value, bool Invert)
 {
@@ -93,9 +126,15 @@ void cMenuOhPvStatus::BuildDisplay(void)
                 Add(new cOsdItem(cString::sprintf("%s\t%s", tr("Battery SoC:"), tr("n/a")), osUnknown, false));
         }
         AddPower(tr("PV Production:"), data_.pv, c.invertPV);
+        if (c.itemPVToday[0])
+            AddEnergy(tr("PV Today:"), data_.pvToday);
         AddPower(tr("House Consumption:"), data_.house, c.invertHouse);
         AddSignedPower(tr("Battery Charging:"), tr("Battery Discharging:"), tr("Battery:"), data_.battery, c.invertBattery);
         AddSignedPower(tr("Grid Import:"), tr("Grid Export:"), tr("Grid:"), data_.grid, c.invertGrid);
+        for (int i = 0; i < NUMLINES; i++) {
+            if (c.itemLine[i][0])
+                AddLine(i, data_.line[i]);
+        }
 
         Add(new cOsdItem("", osUnknown, false));
         char timebuf[64];

@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the vdr-ohpvstatus package.
 msgid ""
 msgstr ""
-"Project-Id-Version: vdr-ohpvstatus 0.4.0\n"
+"Project-Id-Version: vdr-ohpvstatus 0.5.0\n"
 "Report-Msgid-Bugs-To: <see README>\n"
 "POT-Creation-Date: 2026-10-21 15:00+0200\n"
 "PO-Revision-Date: 2026-10-21 15:00+0200\n"
@@ -44,6 +44,9 @@ msgstr "Batterie SoC:"
 
 msgid "PV Production:"
 msgstr "PV-Erzeugung:"
+
+msgid "PV Today:"
+msgstr "PV heute:"
 
 msgid "House Consumption:"
 msgstr "Hausverbrauch:"

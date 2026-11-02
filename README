@@ -25,11 +25,16 @@ system and a battery, read from an openHAB installation, in the VDR OSD:
 
   Battery SoC:        85 %      [|||||||||||||||||||||||||     ]
   PV Production:      4.32 kW
+  PV Today:           18.47 kWh
   House Consumption:  612 W
   Battery Charging:   1.20 kW
   Grid Export:        2.51 kW
+  Autarky today:      87.8 %
 
   Updated: 14:32:07
+
+"PV Today" and the free lines at the end (here "Autarky today") are
+optional, they are only shown if an item is given.
 
 The plugin adds the main menu entry "openHAB PV Status". While the menu is
 open the values are fetched again every update interval in the background.
@@ -87,6 +92,22 @@ Battery, choose one variant:
   --bat-out=ITEM          positive. Both must be given, otherwise --battery
                           is used.
 
+Optional lines, only shown if an item is given:
+
+  --pv-today=ITEM         PV energy of today. The state may be a plain
+                          number in Wh or a quantity in Wh, kWh or MWh. It is
+                          shown in Wh or kWh like the power values (unit
+                          setting in the setup menu).
+  --line1=ITEM            free line 1, any item. A number is shown with the
+                          unit openHAB sends ("87.8 %", "28.06 ct/kWh"),
+                          a text state ("ON") as it is.
+  --label1=TEXT           label of free line 1 (default: the item name).
+                          Quote a text with spaces: --label1="Autarky today"
+  --decimals1=N           decimals of a number in free line 1, 0-3
+                          (default: 1)
+  --line2=ITEM, --label2=TEXT, --decimals2=N
+                          the same for free line 2
+
 On Debian the options are set in /etc/vdr/conf.avail/ohpvstatus.conf,
 otherwise with -P"ohpvstatus -H 192.168.1.10 --grid=MyGridItem ...".
 
@@ -114,7 +135,8 @@ For every item the plugin reads
   http://HOST:PORT/rest/items/ITEM/state
 
 over one HTTP connection. The state may be a plain number ("1234.5") or a
-quantity with unit ("1.2 kW", "85 %"). W, kW, MW and mW are converted to W.
+quantity with unit ("1.2 kW", "85 %"). W, kW, MW and mW are converted to W,
+Wh, kWh, MWh and mWh to Wh.
 The number is always read with a decimal point, independent of VDR's locale.
 
 A test from the VDR machine shows what the plugin gets:
@@ -130,7 +152,7 @@ running), see the VDR log for the curl error.
 Debian packages
 ---------------
 
-Ready-made packages for Debian 13 (trixie) and VDR 2.8.3 are in the
+Ready-made packages for Debian 13 (trixie) and VDR 2.8 are in the
 vdr-portal.de APT repository (vdr-plugin-ohpvstatus).
 
 The Debian packaging is kept in the branch debian/trixie of this

@@ -7,6 +7,7 @@
 #include "openhab.h"
 #include "ohpvstatus.h"
 #include <curl/curl.h>
+#include <cctype>
 #include <locale>
 #include <sstream>
 #include <string>
@@ -17,7 +18,24 @@
 
 // ---- parsing -----------------------------------------------------------------
 
-bool OpenHabParseState(const char *State, double &Value)
+// factor of the prefix of a W or Wh unit, 0 for any other unit
+static double PowerEnergyFactor(const std::string &Unit)
+{
+    std::string prefix;
+    if (Unit.size() >= 2 && Unit.compare(Unit.size() - 2, 2, "Wh") == 0)
+        prefix = Unit.substr(0, Unit.size() - 2);
+    else if (Unit.size() >= 1 && Unit[Unit.size() - 1] == 'W')
+        prefix = Unit.substr(0, Unit.size() - 1);
+    else
+        return 0;
+    if (prefix.empty()) return 1.0;
+    if (prefix == "k")  return 1000.0;
+    if (prefix == "M")  return 1000000.0;
+    if (prefix == "m")  return 0.001;
+    return 0;                             // e.g. "ct/kWh"
+}
+
+bool OpenHabParseState(const char *State, double &Value, double *Raw, char *Unit, size_t UnitSize)
 {
     if (!State)
         return false;
@@ -27,14 +45,15 @@ bool OpenHabParseState(const char *State, double &Value)
     if (!(is >> v))
         return false;                     // NULL, UNDEF, ON, ...
     std::string unit;
-    is >> unit;
-    if (unit == "kW")
-        v *= 1000.0;
-    else if (unit == "MW")
-        v *= 1000000.0;
-    else if (unit == "mW")
-        v /= 1000.0;
-    Value = v;
+    std::getline(is >> std::ws, unit);    // the rest, units may contain spaces
+    while (!unit.empty() && isspace((unsigned char)unit[unit.size() - 1]))
+        unit.erase(unit.size() - 1);
+    if (Raw)
+        *Raw = v;
+    if (Unit && UnitSize)
+        strn0cpy(Unit, unit.c_str(), UnitSize);
+    double f = PowerEnergyFactor(unit);
+    Value = f ? v * f : v;
     return true;
 }
 
@@ -76,9 +95,15 @@ static eFetchResult FetchItem(CURL *Curl, const std::string &BaseUrl, const char
     curl_easy_getinfo(Curl, CURLINFO_RESPONSE_CODE, &code);
     if (code != 200)
         return frInvalid;                 // 404 = no such item, 401 = token needed
-    double v;
-    if (!OpenHabParseState(response.c_str(), v))
+    while (!response.empty() && isspace((unsigned char)response[response.size() - 1]))
+        response.erase(response.size() - 1);
+    if (response.empty() || response == "NULL" || response == "UNDEF")
         return frInvalid;
+    Value.present = true;
+    strn0cpy(Value.text, response.c_str(), sizeof(Value.text));
+    double v;
+    if (!OpenHabParseState(response.c_str(), v, &Value.raw, Value.unit, sizeof(Value.unit)))
+        return frInvalid;                 // text state, only shown in a free line
     Value.value = v;
     Value.valid = true;
     return frOk;
@@ -135,12 +160,15 @@ cEnergyData cOpenHabPoller::FetchAll(void)
     cEnergyValue gridIn, gridOut, batIn, batOut;
     struct { const char *item; cEnergyValue *value; } requests[] = {
         { c.itemPV,                                   &d.pv },
+        { c.itemPVToday,                              &d.pvToday },
         { c.itemHouse,                                &d.house },
         { c.itemSoC,                                  &d.soc },
         { gridSplit ? c.itemGridIn  : c.itemGrid,     gridSplit ? &gridIn : &d.grid },
         { gridSplit ? c.itemGridOut : NULL,           &gridOut },
         { batSplit  ? c.itemBatIn   : c.itemBattery,  batSplit ? &batIn : &d.battery },
         { batSplit  ? c.itemBatOut  : NULL,           &batOut },
+        { c.itemLine[0],                              &d.line[0] },
+        { c.itemLine[1],                              &d.line[1] },
     };
 
     // one connection for all items, stop at the first connection error
