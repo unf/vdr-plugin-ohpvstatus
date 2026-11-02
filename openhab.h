@@ -10,7 +10,7 @@
 #include <time.h>
 #include <vdr/thread.h>
 
-#define NUMLINES 4               // free lines
+#define NUMLINES 4                // free lines
 
 struct cEnergyValue {
     double value;             // W, Wh or as sent (k, M and m prefixes of W and Wh converted)

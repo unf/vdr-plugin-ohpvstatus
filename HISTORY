@@ -1,7 +1,7 @@
 VDR Plugin 'ohpvstatus' Revision History
 ----------------------------------------
 
-2026-11-xx: Version 0.5.0
+2026-11-02: Version 0.5.0
 
 - New optional line "PV Today" with the PV energy of today (--pv-today),
   shown below the SoC in Wh or kWh like the power values.
