@@ -15,7 +15,7 @@
 #include <cstdlib>
 #include <cstring>
 
-static const char *VERSION        = "0.5.0";
+static const char *VERSION        = "0.5.1";
 static const char *DESCRIPTION    = trNOOP("openHAB PV & Energy Status");
 static const char *MAINMENUENTRY  = trNOOP("openHAB PV Status");
 

@@ -1,6 +1,11 @@
 VDR Plugin 'ohpvstatus' Revision History
 ----------------------------------------
 
+2026-11-08: Version 0.5.1
+
+- Fix the Makefile: -fPIC was missing in CFLAGS and CXXFLAGS, the plugin did
+  not link when VDR's pkg-config file does not provide it.
+
 2026-11-02: Version 0.5.0
 
 - New optional line "PV Today" with the PV energy of today (--pv-today),
